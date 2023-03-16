@@ -18,21 +18,20 @@ Two new options are added under **Colors > Map**:
 ![Selecting Palette Swap...](img/process-1a.png)
 ![Selecting options](img/process-1b.png)
 
-Works on the current layer. Will scan the current layer, and identify the colours within it, then rank them by value (`red + green + blue`).
+The plug-in works on the current layer. It scans it and identifies the colours within it, then rank them by value (`red + green + blue`). You also select a 'sample' layer in the plug-in dialogue; this is also scanned for colours, which are ranked. This process may be slow for large layer sizes, as it checks the colour of every single pixel.
 
-![Palette mapping of current layer](img/layer-green-arrows.png)
+![Current layer](img/layer-green.png)
+![Sample layer](img/layer-orange.png)
 
-You select another layer in the plug-in dialogue; the plug-in will scan this for colours, and rank them by value too. This process may be slow for large layer sizes, as it checks the colour of every single pixel.
+**Current layer:** ![Palette mapping of current layer](img/palette-green.png), **sample layer:** ![Palette mapping of sample layer](img/palette-orange.png)
 
-![Palette mapping of sample](img/layer-orange-arrows.png)
 
 > #### Simple Palettes
 > If the selected layer is 1-pixel-high, the plug-in will use this as the palette
 > instead of trying to extract the palette from the image. This means you can recolour
 > to palettes without a constant increase in brightness!
-> ![1-pixel palette](img/palette-orange.png)
 
-Then, it will replace the lowest-ranked colour in the current layer with the lowest-ranked colour in the selected layer, then the second lowest with the second lowest, and so on.
+Then, the plug-in will replace the lowest-ranked colour in the current layer with the lowest-ranked colour in the sample layer, then the second lowest with the second lowest, and so on.
 
 ![Palette mapping](img/palette-arrows.png)
 
@@ -50,6 +49,8 @@ instead of determining it automatically from the current layer. This means you c
 
 ![Selecting Palette Swap subset...](img/process-2a.png)
 ![Selecting subset options](img/process-2b.png)
+
+**Subset layer:** ![Subset layer](img/palette-silver.png), **sample layer:** ![Sample layer](img/palette-redblue.png)
 
 The code then just maps straight between the two palettes, without rearranging them. This means you can recolour both to *and* from a palette with non-increasing brightness.
 
