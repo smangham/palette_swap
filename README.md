@@ -15,16 +15,16 @@ Two new options are added under **Colors > Map**:
 
 ### Palette Swap...
 
-![Selecting Palette Swap...](img/process-1a.png)
-![Selecting options](img/process-1b.png)
+| Selecting plug-in | Selecting options |
+| --- | --- |
+| ![Selecting Palette Swap...](img/process-1a.png) | ![Selecting options](img/process-1b.png) |
 
 The plug-in works on the current layer. It scans it and identifies the colours within it, then rank them by value (`red + green + blue`). You also select a 'sample' layer in the plug-in dialogue; this is also scanned for colours, which are ranked. This process may be slow for large layer sizes, as it checks the colour of every single pixel.
 
-![Current layer](img/layer-green.png)
-![Sample layer](img/layer-orange.png)
-
-**Current layer:** ![Palette mapping of current layer](img/palette-green.png), **sample layer:** ![Palette mapping of sample layer](img/palette-orange.png)
-
+| Current Layer | Sample Layer |
+| --- | --- |
+| ![Current layer](img/layer-green.png) | ![Sample layer](img/layer-orange.png) |
+| ![Palette mapping of current layer](img/palette-green.png) | ![Palette mapping of sample layer](img/palette-orange.png) |
 
 > #### Simple Palettes
 > If the selected layer is 1-pixel-high, the plug-in will use this as the palette
@@ -47,10 +47,14 @@ Then, with the map applied, you get your output:
 Works as above, with one difference - the plug-in asks for a palette to recolour, 
 instead of determining it automatically from the current layer. This means you can have a layer with multiple sub-colours, and only re-colour a subset of them.
 
-![Selecting Palette Swap subset...](img/process-2a.png)
-![Selecting subset options](img/process-2b.png)
+| Selecting plug-in | Selecting options |
+| --- | --- |
+| ![Selecting Palette Swap subset...](img/process-2a.png) | ![Selecting subset options](img/process-2b.png) |
 
-**Subset layer:** ![Subset layer](img/palette-silver.png), **sample layer:** ![Sample layer](img/palette-redblue.png)
+The code goes through the layer in order of pixels, left from right, and takes it as the sample palette. This can be out of luminosity order.
+
+| Subset Layer | Sample Layer | 
+| ![Subset layer](img/palette-silver.png) | ![Sample layer](img/palette-redblue.png) |
 
 The code then just maps straight between the two palettes, without rearranging them. This means you can recolour both to *and* from a palette with non-increasing brightness.
 
@@ -68,8 +72,7 @@ By default, the plug-in will include colours with full transparency (e.g. Alpha 
 * *Go from the lightest to darkest instead.*
 By default, the plug-in will pair up colours from the darkest to the lightest; if there are an uneven number of colours between layers, the lightest of the layer with the greater number will be ignored. Set this to **Yes** to pair up colours from the lightest to the darkest instead.
 
-**Darkest first / No:**
-![Default mapping](img/palette-darktolight-arrows.png)
-
-**Lightest first / Yes:**
-![Default mapping](img/palette-lighttodark-arrows.png)
+| Darkest first | Lightest first |
+| --- | --- |
+| **No** | **Yes** |
+| ![Default mapping](img/palette-darktolight-arrows.png) | ![Lightest first](img/palette-lighttodark-arrows.png) |
