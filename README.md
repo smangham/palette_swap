@@ -24,7 +24,7 @@ The plug-in works on the current layer. It scans it and identifies the colours w
 | Current Layer | Sample Layer |
 | --- | --- |
 | ![Current layer](img/layer-green.png) | ![Sample layer](img/layer-orange.png) |
-| ![Palette mapping of current layer](img/palette-green.png) | ![Palette mapping of sample layer](img/palette-orange.png) |
+| Extracted: ![Palette mapping of current layer](img/palette-green.png) | Extracted: ![Palette mapping of sample layer](img/palette-orange.png) |
 
 > #### Simple Palettes
 > If the selected layer is 1-pixel-high, the plug-in will use this as the palette
@@ -33,13 +33,13 @@ The plug-in works on the current layer. It scans it and identifies the colours w
 
 Then, the plug-in will replace the lowest-ranked colour in the current layer with the lowest-ranked colour in the sample layer, then the second lowest with the second lowest, and so on.
 
-![Palette mapping](img/palette-arrows.png)
-
 If multiple colours have the same total value, the plug-in will fail as it cannot generate a unique map. If the number of colours in the two layers differs, only colours with a counterpart will be replaced. 
 
 Then, with the map applied, you get your output:
 
-![Palette swapped](img/palette-swapped.png)
+| Map | Output |
+| --- | --- |
+| ![Palette mapping](img/palette-arrows.png) | ![Palette swapped](img/palette-swapped.png) |
 
 
 ### Palette Swap subset...
@@ -54,15 +54,14 @@ instead of determining it automatically from the current layer. This means you c
 The code goes through the layer in order of pixels, left from right, and takes it as the sample palette. This can be out of luminosity order.
 
 | Subset Layer | Sample Layer | 
-| ![Subset layer](img/palette-silver.png) | ![Sample layer](img/palette-redblue.png) |
+| --- | --- |
+| Extracted: ![Subset layer](img/palette-silver.png) | Extracted: ![Sample layer](img/palette-redblue.png) |
 
-The code then just maps straight between the two palettes, without rearranging them. This means you can recolour both to *and* from a palette with non-increasing brightness.
+The code then just maps straight between the two palettes, without rearranging them. This means you can recolour both to *and* from a palette with non-increasing brightness. The map is applied, and then you get your output:
 
-![Palette mapping](img/palette-arrows-2.png)
-
-The map is applied, and then you get your output:
-
-![Palette swapped](img/palette-swapped-2.png)
+| Map | Output |
+| --- | --- |
+| ![Palette mapping](img/palette-arrows-2.png) | ![Palette swapped](img/palette-swapped-2.png) |
 
 ### Common Options
 
