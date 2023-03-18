@@ -2,10 +2,19 @@
 
 A GIMP Python plug-in for swapping the palettes of layers. Designed to work with sprite art with limited palette sizes, but not (yet) set to indexed colour profiles.
 
+**Credits:** Sprites in the examples are from the incredible [Retrograde Minis](https://www.retrogrademinis.com/).
+
+
 ## Installation
 
-Download the repository, and put the `palette_swap` directory in your GIMP plug-ins folder.
-To find your plug-ins folder, see **Edit > Preferences > Folders > Plug-ins**. Then, select a folder and click the **Show file location in file manager** button on the right above the list.
+Download the repository, and put the `palette_swap` directory in your GIMP plug-ins folder. You may need to rename it from `palette-swap-main`.
+To find your plug-ins folder, see **Edit > Preferences > Folders > Plug-ins**. 
+Then, select a folder and click the **Show file location in file manager** button on the right above the list.
+
+You should end up with the Python script at a location like:
+```
+C:\Users\YourName\AppData\Roaming\GIMP\2.10\plug-ins\palette_swap\palette_swap.py
+```
 
 ## Usage
 
