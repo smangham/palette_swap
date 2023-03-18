@@ -99,5 +99,5 @@ Designed to make it a bit easier to generate the palettes used for **Palette Swa
 | ![Selecting Palette to Layer...](img/palette-to-layer.png) | ![Selecting options](img/palette-to-layer-2.png) |
 
 The output for the example would be:
-![Palette to Layer output](palette-to-layer-3.png)
+![Palette to Layer output](img/palette-to-layer-3.png)
 
