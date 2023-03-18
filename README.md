@@ -9,15 +9,16 @@ To find your plug-ins folder, see **Edit > Preferences > Folders > Plug-ins**. T
 
 ## Usage
 
-Two new options are added under **Colors > Map**:
+Three new options are added under **Colors > Map**:
 * *Palette Swap...*
-* *Palette Swap subset...*
+* *Palette Swap Precise...*
+* *Palette to Layer*
 
 ### Palette Swap...
 
 | Selecting plug-in | Selecting options |
 | --- | --- |
-| ![Selecting Palette Swap...](img/process-1a.png) | ![Selecting options](img/process-1b.png) |
+| ![Selecting Palette Swap...](img/palette-swap-dropdown.png) | ![Selecting options](img/palette-swap-menu.png) |
 
 The plug-in works on the current layer. It scans it and identifies the colours within it, then rank them by value (`red + green + blue`). You also select a 'sample' layer in the plug-in dialogue; this is also scanned for colours, which are ranked. This process may be slow for large layer sizes, as it checks the colour of every single pixel.
 
@@ -41,15 +42,31 @@ Then, with the map applied, you get your output:
 | --- | --- |
 | ![Palette mapping](img/palette-arrows.png) | ![Palette swapped](img/palette-swapped.png) |
 
+#### Options
 
-### Palette Swap subset...
+* *Whether or not to sample colours from transparent pixels.*
+By default, the plug-in will include colours with full transparency (e.g. Alpha set to 0) when building up the colour profile for a layer. Set this to **No** to exclude these colours, and only include colours that are at least partially visible.
+
+* *Go from the lightest to darkest instead.*
+By default, the plug-in will pair up colours from the darkest to the lightest; if there are an uneven number of colours between layers, the lightest of the layer with the greater number will be ignored. Set this to **Yes** to pair up colours from the lightest to the darkest instead.
+
+| Darkest first | Lightest first |
+| --- | --- |
+| **No** | **Yes** |
+| ![Default mapping](img/palette-darktolight-arrows.png) | ![Lightest first](img/palette-lighttodark-arrows.png) |
+
+* *Ignore colours with less than this many pixels.*
+Some images might have the odd pixel or two accidentally set to the wrong colour, messing up the auto-detection of the palette. If you run into issues, try setting this to 1 or 2.
+
+
+### Palette Swap Precise...
 
 Works as above, with one difference - the plug-in asks for a palette to recolour, 
 instead of determining it automatically from the current layer. This means you can have a layer with multiple sub-colours, and only re-colour a subset of them.
 
 | Selecting plug-in | Selecting options |
 | --- | --- |
-| ![Selecting Palette Swap subset...](img/process-2a.png) | ![Selecting subset options](img/process-2b.png) |
+| ![Selecting Palette Swap Precise...](img/palette-swap-dropdown-2.png) | ![Selecting subset options](img/palette-swap-menu-2.png) |
 
 The code goes through the layer in order of pixels, left from right, and takes it as the sample palette. This can be out of luminosity order.
 
@@ -63,15 +80,15 @@ The code then just maps straight between the two palettes, without rearranging t
 | --- | --- |
 | ![Palette mapping](img/palette-arrows-2.png) | ![Palette swapped](img/palette-swapped-2.png) |
 
-### Common Options
 
-* *Whether or not to sample colours from transparent pixels.*
-By default, the plug-in will include colours with full transparency (e.g. Alpha set to 0) when building up the colour profile for a layer. Set this to **No** to exclude these colours, and only include colours that are at least partially visible.
+### Palette to Layer...
 
-* *Go from the lightest to darkest instead.*
-By default, the plug-in will pair up colours from the darkest to the lightest; if there are an uneven number of colours between layers, the lightest of the layer with the greater number will be ignored. Set this to **Yes** to pair up colours from the lightest to the darkest instead.
+Designed to make it a bit easier to generate the palettes used for **Palette Swap Precise**, this uses the automatic palette detection from **Palette Swap** to build a new layer, 1-pixel high, that can be easily used in **Palette Swap Precise**. It shares the same options as **Palette Swap**. 
 
-| Darkest first | Lightest first |
+| Selecting plug-in | Selecting options |
 | --- | --- |
-| **No** | **Yes** |
-| ![Default mapping](img/palette-darktolight-arrows.png) | ![Lightest first](img/palette-lighttodark-arrows.png) |
+| ![Selecting Palette to Layer...](img/palette-to-layer.png) | ![Selecting options](img/palette-to-layer-2.png) |
+
+The output for the example would be:
+[Palette to Layer output](palette-to-layer-3.png)
+

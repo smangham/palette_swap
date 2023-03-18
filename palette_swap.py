@@ -54,13 +54,15 @@ def extract_linear_palette(layer, current_progress, progress_fraction):
 
 
 def extract_sorted_palette(
-    layer, include_transparent, current_progress, progress_fraction
+    layer, include_transparent, count_threshold,
+    current_progress, progress_fraction,
 ):
     """
     Extracts a palette from an image, by finding the discrete RGB values
     and then sorting them by total R+G+B value.
     """
-    palette = {}
+    palette_counts = {}
+    
     region = layer.get_pixel_rgn(
         0, 0, layer.width, layer.height
     )
@@ -69,20 +71,37 @@ def extract_sorted_palette(
     for index_row in range(0, layer.height):
         for pixel in RowIterator(region[0:layer.width, index_row], layer.bpp):
             colour_rgb = pixel[0:3]
-            colour_sum = sum(colour_rgb)
 
             if layer.has_alpha and pixel[3] == 0 and not include_transparent:
                 continue
 
-            elif colour_sum in palette:
-                if palette[colour_sum] != colour_rgb:
+            elif colour_rgb not in palette_counts:
+                palette_counts[colour_rgb] = 1
+
+            else:
+                palette_counts[colour_rgb] += 1
+
+        gimp.progress_update(current_progress + progress_step * index_row)
+
+    # Now we've counted all the pixel colours, discard outliers and sort
+    palette = {}
+    for colour_rgb, colour_count in palette_counts.items():
+        colour_sum = sum(colour_rgb)
+
+        if colour_count > count_threshold:
+            if colour_sum in palette:
+                if colour_rgb != palette[colour_sum]:
+                    colour_duplicate = palette[colour_sum]
                     raise KeyError(
-                        "Multiple colours with same sum value, cannot palette swap."
+                        "Multiple colours in layer with same total RGB values: " + \
+                        str(colour_rgb) + "(" + str(colour_count) + " pixels) and " + \
+                        str(colour_duplicate) + "(" + str(palette_counts[colour_duplicate]) + " pixels). "
+                        "Cannot automatically sort colours by brightness. " + \
+                        "Try increasing the 'ignore colours with less than this many pixels' setting " + \
+                        "to drop stray pixels."
                     )
             else:
                 palette[colour_sum] = colour_rgb
-
-        gimp.progress_update(current_progress + progress_step * index_row)
 
     sorted_palette = [
         palette[key] for key in sorted(list(palette.keys()))
@@ -127,13 +146,13 @@ def apply_palette_map(
 
 
 def palette_swap_linear(
-    image, layer_orig, layer_palette, layer_sample, include_transparent, light_first
+    image, layer_orig, layer_palette, layer_sample
 ):
     """
     """
     gimp.progress_init(
         "Swapping palette from " + layer_palette.name + \
-        " to " + layer_orig.name + " onto " + layer_orig.name + "..."
+        " to " + layer_sample.name + " for " + layer_orig.name + "..."
     )
 
     # Remember current foreground
@@ -149,13 +168,9 @@ def palette_swap_linear(
             layer=layer_sample, current_progress=0, progress_fraction=0.4
         ) 
     else:
-        pdb.gimp_message(
-            "Sample palette is not 1-high! Extracting colours from image and sorting automatically."
+        raise ValueError(
+            "Sample palette is not 1-high! Use Palette to Layer to generate one."
         )
-        sorted_palette_new = extract_sorted_palette(
-            layer=layer_sample, include_transparent=include_transparent,
-            current_progress=0, progress_fraction=0.4
-        )     
 
     gimp.progress_init("Finding " + str(layer_orig.name)+ " palette...")
 
@@ -164,17 +179,14 @@ def palette_swap_linear(
             layer=layer_palette, current_progress=0.4, progress_fraction=0.4    
         ) 
     else:
-        pdb.gimp_message(
-            "Original image palette is not 1-high! Extracting colours from image and sorting automatically."
-        )
-        sorted_palette_old = extract_sorted_palette(
-            layer=layer_palette, include_transparent=include_transparent,
-            current_progress=0.4, progress_fraction=0.4    
+        raise ValueError(
+            "Sample palette is not 1-high! Use Palette to Layer to generate one."
         )
 
-    if light_first:
-        sorted_palette_old.reverse()
-        sorted_palette_new.reverse()
+    if layer_palette.width != layer_sample.width:
+        raise ValueError(
+            "Palette to recolour and sample palette are different sizes."
+        )
 
     apply_palette_map(
         image=image, layer=layer_orig,
@@ -191,11 +203,14 @@ def palette_swap_linear(
     pdb.gimp_undo_push_group_end(image)
 
 
-def palette_swap(image, layer_orig, layer_sample, include_transparent, light_first):
+def palette_swap(
+    image, layer_orig, layer_sample, include_transparent, light_first,
+    count_threshold
+):
     """
     """
     gimp.progress_init(
-        "Swapping palette from " + layer_orig.name + " onto " + layer_orig.name + "..."
+        "Swapping palette from " + layer_sample.name + " onto " + layer_orig.name + "..."
     )
 
     # Remember current foreground
@@ -204,9 +219,7 @@ def palette_swap(image, layer_orig, layer_sample, include_transparent, light_fir
     # Set up an undo group, so the operation will be undone in one step.
     pdb.gimp_undo_push_group_start(image)
 
-    # Extract the palettes.
-
-    
+    # Extract the palettes.   
     gimp.progress_init("Finding " + str(layer_sample.name)+ " palette...")
     
     if layer_sample.height == 1:
@@ -216,6 +229,7 @@ def palette_swap(image, layer_orig, layer_sample, include_transparent, light_fir
     else:
         sorted_palette_new = extract_sorted_palette(
             layer=layer_sample, include_transparent=include_transparent,
+            count_threshold=count_threshold,
             current_progress=0, progress_fraction=0.4
         )     
 
@@ -223,7 +237,8 @@ def palette_swap(image, layer_orig, layer_sample, include_transparent, light_fir
 
     sorted_palette_old = extract_sorted_palette(
         layer=layer_orig, include_transparent=include_transparent,
-        current_progress=0.4, progress_fraction=0.4    
+        count_threshold=count_threshold,
+        current_progress=0.4, progress_fraction=0.4
     )
     
     if light_first:
@@ -245,10 +260,49 @@ def palette_swap(image, layer_orig, layer_sample, include_transparent, light_fir
     pdb.gimp_undo_push_group_end(image)
 
 
+def palette_to_layer(
+    image, layer_orig, palette_name, include_transparent, count_threshold
+):
+    """
+    """
+    gimp.progress_init(
+        "Extracting palette from " + layer_orig.name + "..."
+    )
+    # Set up an undo group, so the operation will be undone in one step.
+    pdb.gimp_undo_push_group_start(image)
+
+    # Extract the palettes
+    gimp.progress_init("Finding " + str(layer_orig.name)+ " palette...")
+
+    sorted_palette = extract_sorted_palette(
+        layer=layer_orig, include_transparent=include_transparent,
+        count_threshold=count_threshold,
+        current_progress=0.0, progress_fraction=1.0    
+    )
+    sorted_palette.reverse()
+
+
+    layer_palette = pdb.gimp_layer_new(
+        image, len(sorted_palette), 1, RGB_IMAGE, palette_name, 100.0, 
+        LAYER_MODE_NORMAL
+    )
+
+    for column_index, colour_rgb in zip(range(0, len(sorted_palette)), sorted_palette):
+        pdb.gimp_drawable_set_pixel(
+            layer_palette, column_index, 0, 3, colour_rgb
+        )
+
+    pdb.gimp_image_insert_layer(image, layer_palette, None, 0)
+    pdb.gimp_displays_flush()
+
+    # Close the undo group.
+    pdb.gimp_undo_push_group_end(image)
+
+
 register(
     "python_fu_palette_swap",
-    "Given an image, ranks the brightness of colours in it, ranks colours in the current layer, and replaces colours in the current layer with their equivalent rank in the sample.",
-    "Given an image, ranks the brightness of colours in it, ranks colours in the current layer, and replaces colours in the current layer with their equivalent rank in the sample.",
+    "Given a sample layer, ranks the brightness of colours in it, ranks colours in the current layer, and replaces colours in the current layer with their equivalent rank in the sample.",
+    "Given a sample layer, ranks the brightness of colours in it, ranks colours in the current layer, and replaces colours in the current layer with their equivalent rank in the sample.",
     "Sam Mangham",
     "Sam Mangham",
     "2023",
@@ -257,9 +311,10 @@ register(
     [
         (PF_IMAGE, "image",       "Input image", None),
         (PF_DRAWABLE, "layer_old", "Layer to recolour.", None),
-        (PF_DRAWABLE, "layer_new", "Layer to sample colours from.\nShould be 1 pixel high, and light to dark.", None),
+        (PF_DRAWABLE, "layer_new", "Layer to sample colours from.", None),
         (PF_BOOL,  "include_transparent",   "Whether or not to sample colours from transparent pixels.",   True),
-        (PF_BOOL,  "light_first",   "Go from the lightest to darkest instead.\nNo effect if both have the same number of colours.",   False)
+        (PF_BOOL,  "light_first",   "Go from the lightest to darkest instead.\nNo effect if both have the same number of colours.",   False),
+        (PF_INT, "count_threshold", "Ignore colours with less than this many pixels.", 0)
     ],
     [],
     palette_swap, menu="<Image>/Colors/Map")
@@ -267,22 +322,41 @@ register(
 
 register(
     "python_fu_palette_swap_linear",
-    "Given a 1-pixel-high palette going from light to dark to map from, and another to map to, applies that map to the current layer.",
-    "Given a 1-pixel-high palette going from light to dark to map from, and another to map to, applies that map to the current layer.",
+    "Given two 1-pixel high layers, creates a map from the colours in one to the other, and applies it to the current layer.",
+    "Given two 1-pixel high layers, creates a map from the colours in one to the other, and applies it to the current layer.",
     "Sam Mangham",
     "Sam Mangham",
     "2023",
-    "Palette Swap subset...",
+    "Palette Swap Precise...",
     "RGB*",      # Alternately use RGB, RGB*, GRAY*, INDEXED etc.
     [
         (PF_IMAGE, "image",       "Input image", None),
         (PF_DRAWABLE, "layer_old", "Layer to recolour.", None),
         (PF_DRAWABLE, "layer_palette", "Palette to replace for the current layer.\nShould be 1-pixel high, and light to dark.", None),
-        (PF_DRAWABLE, "layer_new", "Layer to sample colours from.\nShould be 1-pixel-high, and light to dark.", None),
-        (PF_BOOL,  "include_transparent",   "Whether or not to sample colours from transparent pixels.",   True),
-        (PF_BOOL,  "light_first",   "Go from the lightest to darkest instead.\nNo effect if both have the same number of colours.",   False)
+        (PF_DRAWABLE, "layer_new", "Palette to replace colours with.\nShould be 1-pixel-high, and light to dark.", None),
     ],
     [],
     palette_swap_linear, menu="<Image>/Colors/Map")
+
+
+register(
+    "python_fu_palette_to_layer",
+    "Given a layer, creates a 1-pixel high layer that contains the colours within it, sorted by RGB value.",
+    "Given a layer, creates a 1-pixel high layer that contains the colours within it, sorted by RGB value.",
+    "Sam Mangham",
+    "Sam Mangham",
+    "2023",
+    "Palette to Layer...",
+    "RGB*",      # Alternately use RGB, RGB*, GRAY*, INDEXED etc.
+    [
+        (PF_IMAGE, "image",       "Input image", None),
+        (PF_DRAWABLE, "layer_old", "Layer to extract palette from.", None),
+        (PF_STRING, "palette_name", "Palette layer name", "Palette"),
+        (PF_BOOL,  "include_transparent",   "Whether or not to sample colours from transparent pixels.",   True),
+        (PF_INT, "count_threshold", "Ignore colours with less than this many pixels.", 0)
+    ],
+    [],
+    palette_to_layer, menu="<Image>/Colors/Map")
+
 
 main()
