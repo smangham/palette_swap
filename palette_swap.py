@@ -4,8 +4,15 @@ palette_swap.py
 Created by Sam Mangham 2023/3/16, licensed GPLv3
 """
 import struct
+from collections import defaultdict
 from gimpfu import *
 
+
+def rgb_to_brightness(colour_rgb):
+    """
+    https://www.w3.org/TR/AERT/#color-contrast
+    """
+    return 0.299 * colour_rgb[0] + 0.587 * colour_rgb[1] +  0.114 * colour_rgb[2]
 
 class RowIterator:
     """
@@ -61,7 +68,7 @@ def extract_sorted_palette(
     Extracts a palette from an image, by finding the discrete RGB values
     and then sorting them by total R+G+B value.
     """
-    palette_counts = {}
+    palette_counts = defaultdict(int)
     
     region = layer.get_pixel_rgn(
         0, 0, layer.width, layer.height
@@ -70,38 +77,33 @@ def extract_sorted_palette(
 
     for index_row in range(0, layer.height):
         for pixel in RowIterator(region[0:layer.width, index_row], layer.bpp):
-            colour_rgb = pixel[0:3]
-
-            if layer.has_alpha and pixel[3] == 0 and not include_transparent:
-                continue
-
-            elif colour_rgb not in palette_counts:
-                palette_counts[colour_rgb] = 1
-
-            else:
-                palette_counts[colour_rgb] += 1
+            if include_transparent or layer.has_alpha and pixel[3] > 0:
+                palette_counts[pixel] += 1
 
         gimp.progress_update(current_progress + progress_step * index_row)
 
     # Now we've counted all the pixel colours, discard outliers and sort
     palette = {}
-    for colour_rgb, colour_count in palette_counts.items():
-        colour_sum = sum(colour_rgb)
+    for colour_value, colour_count in palette_counts.items():
+        colour_rgb = colour_value[0:3]  # We key off the full value for simplicity
+        colour_brightness = rgb_to_brightness(colour_rgb)
 
         if colour_count > count_threshold:
-            if colour_sum in palette:
-                if colour_rgb != palette[colour_sum]:
-                    colour_duplicate = palette[colour_sum]
-                    raise KeyError(
-                        "Multiple colours in layer with same total RGB values: " + \
-                        str(colour_rgb) + "(" + str(colour_count) + " pixels) and " + \
-                        str(colour_duplicate) + "(" + str(palette_counts[colour_duplicate]) + " pixels). "
-                        "Cannot automatically sort colours by brightness. " + \
-                        "Try increasing the 'ignore colours with less than this many pixels' setting " + \
-                        "to drop stray pixels."
+            if colour_brightness in palette and colour_rgb != palette[colour_brightness]:
+                colour_duplicate = palette[colour_brightness]
+                raise KeyError((
+                    "Multiple colours in layer with same brightness ({brightness}): "
+                    "{colour_1} ({count_1} pixels) and {colour_2} ({count_2} pixels. " 
+                    "Cannot automatically sort colours by brightness. "
+                    "Try increasing the 'ignore colours with less than this many pixels' setting "
+                    "to drop stray pixels.".format(
+                        brightness=colour_brightness,
+                        colour_1=colour_rgb, count_1=colour_count,
+                        colour_2=colour_duplicate, count_2=palette_counts[colour_duplicate]
                     )
+                ))
             else:
-                palette[colour_sum] = colour_rgb
+                palette[colour_brightness] = colour_rgb
 
     sorted_palette = [
         palette[key] for key in sorted(list(palette.keys()))
@@ -294,6 +296,7 @@ def palette_to_layer(
 
     pdb.gimp_image_insert_layer(image, layer_palette, None, 0)
     pdb.gimp_displays_flush()
+    pdb.gimp_image_set_active_layer(image, layer_orig)  # Sometimes it'll switch to the palette layer instead
 
     # Close the undo group.
     pdb.gimp_undo_push_group_end(image)
@@ -341,8 +344,8 @@ register(
 
 register(
     "python_fu_palette_to_layer",
-    "Given a layer, creates a 1-pixel high layer that contains the colours within it, sorted by RGB value.",
-    "Given a layer, creates a 1-pixel high layer that contains the colours within it, sorted by RGB value.",
+    "Given a layer, creates a 1-pixel high layer that contains the colours within it, sorted by brightness.",
+    "Given a layer, creates a 1-pixel high layer that contains the colours within it, sorted by brightness.",
     "Sam Mangham",
     "Sam Mangham",
     "2023",
