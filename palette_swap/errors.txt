@@ -1,0 +1,7 @@
+Traceback (most recent call last):
+  File "C:\Users\Toaster\AppData\Local\Programs\GIMP 3\lib\gimp\3.0\plug-ins\ttt-palette-swap\ttt-palette-swap.py", line 134, in run
+    include_transparent=config.get_property("include-transparent"),
+                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+TypeError: object of type `GimpProcedureConfigRun-ttt-palette-swap-linear' does not have property `include-transparent'
+C:\Users\Toaster\AppData\Local\Programs\GIMP 3\lib\gimp\3.0\plug-ins\ttt-palette-swap\ttt-palette-swap.py:371: Warning: g_error_new: assertion 'domain != 0' failed
+  Gimp.main(PaletteSwapPlugin.__gtype__, sys.argv)
